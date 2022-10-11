@@ -2,8 +2,8 @@ import { initializeApp } from 'firebase/app';
 import { getDatabase, get, child, ref, update, push } from "firebase/database";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAgusRDy-8ClkGHN3xjUpHbA6up7GGvu6w",
-  authDomain: "sasave-dce67.firebaseapp.com",
+  apiKey: "xxxxxxxxxxxxx",
+  authDomain: "xxxxxxxxxxxxx",
   projectId: "sasave-dce67",
   storageBucket: "sasave-dce67.appspot.com",
   messagingSenderId: "916413326864",
