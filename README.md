@@ -1,2 +1,2 @@
 # CouponSaver
-This is a chrome extension built using firebase , vanilla javascript, html and css for styling that uses web scraping to detect whether a coupon could be u7sed to save money on an online purchase at checkout.
+This is a chrome extension built using firebase , vanilla javascript, html and css for styling that uses web scraping to detect whether a coupon could be used to save money on an online purchase at checkout. While it is a Chrome extension it cannot be publicly published anywhere but on my local systems browser as manifest version 2 is currently deprecated and no extensions using such version can be published and as manifest V3 is still in beta it cannot be published using this version either, as such it remains on my local browser as stated above.
