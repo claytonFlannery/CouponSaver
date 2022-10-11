@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <title>Coupon Code Script</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+  body,html,p{
+    padding: 0;
+    margin: 0;
+    font-family: system-ui;
+  }
+  .cart{
+    border:3px solid red;
+    padding:20px;
+    margin:5px;
+    width:300px;
+    float:left;
+  }
+  .right{
+    float:right;
+    padding:20px;
+    margin:5px;
+    border:3px solid black;
+  }
+
+  </style>
+</head>
+<body>
+
+
+  <div class="cart">
+
+    <input class="couponField">
+    <button class="submitCoupon" onclick="checkCouponForDeal()">Apply Discount</button>
+
+    <div>
+      <h3>Order Total</h3>
+      <div class="orderTotal">$50.00</div>
+    </div>
+
+  </div>
+
+
+  <div class="right">
+    <p>List of coupon codes that are valid</p>
+    <ul>
+      <li>FREE-20</li>
+      <li>MONEY-OFF-50</li>
+      <li>FREE-70</li>
+    </ul>
+    <button class="beginChecks">Begin Auto-Coupon Checks</button>
+  </div>
+
+
+  <script type="text/javascript">
+
+
+
+  /////////////////
+  /////////////////
+  /////////////////
+
+  var runCouponCheck = {};
+  runCouponCheck.setCoupons = [];
+
+  /*
+  *This method init the checks and start the process of checking the coupon codes for this domain
+  */
+  runCouponCheck.runCheck = function(selectorObj = {}, status = 'start'){
+    //check if start or continue
+
+    var couponChecks = {};
+    if(status == 'start'){
+      //save selectorObj to localStorage
+      localStorage.setItem('__extensionName__selectorObj', JSON.stringify(selectorObj));
+      //Step One
+      //Set localstorage as checking coupons so that it can work between page loads
+      localStorage.setItem('__extensionName__runChecks', 'running');
+
+      //get starting basket value
+      var basketValue = document.querySelector(selectorObj.costField).innerText;
+      basketValue = parseFloat(basketValue.substring(selectorObj.costFieldPrefix)).toFixed(2);
+      localStorage.setItem('__extensionName__startBasketValue', basketValue);
+
+      couponChecks['bestDeal'] = {};
+      couponChecks['bestDeal']['couponName'] = '';
+      couponChecks['bestDeal']['basketValue'] = parseFloat(basketValue).toFixed(2); //0.00;
+      couponChecks['checkedCoupons'] = [];
+      //update localstorage with check coupons / winning coupon array
+      localStorage.setItem('__extensionName__currentCoupon', '');
+      console.log(couponChecks, JSON.stringify(couponChecks));
+      localStorage.setItem('__extensionName__couponChecks', JSON.stringify(couponChecks));
+
+
+      //Set localStorage list of coupons to check
+      console.log('Starting New Check');
+    }else{
+      selectorObj = JSON.parse(localStorage.getItem('__extensionName__selectorObj'));
+      couponChecks = JSON.parse(localStorage.getItem('__extensionName__couponChecks'));
+
+      console.log('Continue - Check');
+
+      if(localStorage.getItem('__extensionName__currentCoupon') != ''){
+        //Part way through checking item
+        //complete now that page reloaded...
+        runCouponCheck.checkCouponEnd(selectorObj, localStorage.getItem('__extensionName__currentCoupon'));
+        return false;
+      }
+    }
+
+    if(!selectorObj.hasOwnProperty('querySel')){
+      return false;
+    }else{
+      console.log('[Run Function]');
+    }
+
+
+    //set coupons array for checks
+    var coupons = this.setCoupons;
+    var couponName = '';
+    var nextCheckCoupon = '';
+    var i;
+    //loop coupons
+    for (i = 0; i < coupons.length; i++) {
+      couponName = coupons[i];
+      var checkedCoupons = couponChecks.checkedCoupons;
+      if(checkedCoupons.includes(couponName) == false){
+        nextCheckCoupon = couponName;
+      }
+    }
+
+    //If not empty check next...
+    if(nextCheckCoupon != ''){
+      //check this coupon
+      this.checkCouponStart(selectorObj, nextCheckCoupon);
+      return false;
+    }else{
+      //no more coupons to check
+      //Loop complete ends
+
+      //select winner and then apply this coupon...
+      localStorage.setItem('__extensionName__runChecks', '');
+      console.log('Checks END');
+      if(couponChecks.bestDeal.couponName != ''){
+
+        this.checkCouponStart(selectorObj, couponChecks.bestDeal.couponName, true);
+        console.log('display winner...');
+        alert('The best coupon is '+couponChecks.bestDeal.couponName);
+      }else{
+        //could not find a valid deal
+        this.checkCouponStart(selectorObj, '', true);
+        alert('You already have the best price');
+      }
+      //remove all localstorage
+      localStorage.removeItem('__extensionName__runChecks');
+      localStorage.removeItem('__extensionName__selectorObj');
+      localStorage.removeItem('__extensionName__startBasketValue');
+      localStorage.removeItem('__extensionName__currentCoupon');
+      localStorage.removeItem('__extensionName__couponChecks');
+
+      return false;
+    }
+  }
+  /*
+  * This method checks a coupon code - called from method above
+  */
+  runCouponCheck.checkCouponStart = function(selectorObj = {} , couponName = '', onlyApply = false){
+    if(couponName==''){
+      return false;
+    }
+    console.log('Start Check: '+couponName);
+
+    couponChecks = JSON.parse(localStorage.getItem('__extensionName__couponChecks'));
+    //(before this check if need to make any clicks to open or enter coupon)
+
+    //update localStorage
+    //Update localstorage with current coupon we are checking
+    localStorage.setItem('__extensionName__currentCoupon', couponName);
+
+    //Actual check
+
+    //grab selectorObj.querySel and update value of input field
+    document.querySelector(selectorObj.querySel).value=couponName;
+
+    //step two
+    //press submit or press enter
+    if(selectorObj.couponType == 'button'){
+      document.querySelector(selectorObj.submitButton).click();
+    }
+    if(selectorObj.couponType == 'enter'){
+      const eventEnter = new KeyboardEvent('keyup', {
+        key: 'Enter',
+      });
+      document.querySelector(selectorObj.querySel).dispatchEvent(eventEnter);
+    }
+
+    //This is a check to see if we only want to apply not wait and check the deal
+    if(onlyApply == false){
+
+      //if need reload dont run this next part
+      if(selectorObj.needReload == false){
+        //on load after timeout run code below
+        runCouponCheck.checkCouponEnd(selectorObj, couponName);
+      }else{
+        console.log('waiting for page to reload...');
+      }
+    }
+
+  }
+  runCouponCheck.checkCouponEnd = function(selectorObj = {} , couponName = ''){
+    if(couponName==''){
+      return false;
+    }
+    var timeoutMS = selectorObj.waitTime;
+    setTimeout(function(){
+
+      console.log('checking...'+couponName);
+
+      couponChecks = JSON.parse(localStorage.getItem('__extensionName__couponChecks'));
+
+      //by this point either page has reloaded or timeout has completed
+
+      //or run timeout here...
+
+      //step three
+      //grab updated basket value
+      var basketValue = document.querySelector(selectorObj.costField).innerText;
+      basketValue = basketValue.substring(selectorObj.costFieldPrefix);
+
+      //compare current value to start value
+      var startBasket = localStorage.getItem('__extensionName__startBasketValue');
+      if(parseFloat(basketValue) < parseFloat(startBasket)){
+        //console.log('Coupon is lower?', startBasket, basketValue);
+
+        //compare against best deal
+        if(parseFloat(basketValue) < parseFloat(couponChecks.bestDeal.basketValue)){
+          couponChecks.bestDeal.basketValue = parseFloat(basketValue).toFixed(2);
+          couponChecks.bestDeal.couponName = couponName;
+          console.log('NEW BEST DEAL--');
+        }
+
+        //set as best deal
+      }else{
+        //console.log('Coupon is higher?', startBasket, basketValue);
+        console.log('Not the best discount--');
+      }
+
+      //step four
+      //return check complete
+
+      //couponChecks.checkedCoupons[couponName] = 'checked';
+      couponChecks.checkedCoupons.push(couponName);
+
+      //update couponchecks
+      localStorage.setItem('__extensionName__couponChecks', JSON.stringify(couponChecks));
+
+      //end check
+      localStorage.setItem('__extensionName__currentCoupon', '');
+
+      //Remove from url hash
+      window.location.hash = '';
+
+      //move onto nextcoupon
+      runCouponCheck.runCheck({}, 'continue');
+
+    }, timeoutMS);
+
+  }
+
+
+  /////////////////
+  /////////////////
+  /////////////////
+
+  var selectorObj = {};
+  //Array of coupons to check
+  runCouponCheck.setCoupons = ["FREE-700", "SHINE2020-1", "SHINE2020-2","FREE-70"];
+  //QuerySelector info of input field
+  selectorObj.querySel = '.couponField';
+  //querySelector on submit buton for coupon
+  selectorObj.submitButton = '.submitCoupon';
+  //Does the page reload as submit button pressed
+  selectorObj.needReload = true;
+  //Submit coupon type - types [button] or [enter]
+  selectorObj.couponType = 'button';
+  //If type if button how long should wait for order total to check coupon
+  selectorObj.waitTime = 2000; //in milliseconds e.g 2seconds = 2000ms
+  //querySelector of item cost to check basket value
+  selectorObj.costField = '.orderTotal';
+  //If there a prefix from the field to remove e.g $500 would need to remove the first character
+  selectorObj.costFieldPrefix = 1;
+
+
+  //Check if currently running a check
+  var checkStatus = localStorage.getItem('__extensionName__runChecks');
+  if(checkStatus == 'running'){
+    //continue checks
+    runCouponCheck.runCheck({}, 'continue');
+  }
+
+  document.querySelector('.beginChecks').addEventListener('click',function(){
+    // run checks init button....
+    runCouponCheck.runCheck(selectorObj);
+  });
+
+
+</script>
+
+
+<script>
+if(window.location.hash != ''){
+  if(selectorObj.needReload == true){
+    document.querySelector('.couponField').value = window.location.hash.substring(1);
+    checkCouponForDeal();
+  }
+}
+//Seperate Fake Coupon CHeck Function
+function checkCouponForDeal(){
+  var coupon = document.querySelector('.couponField').value;
+  if(selectorObj.needReload == true){
+    window.location.hash = coupon;
+  }
+  var validCoupons = ["FREE-20","MONEY-OFF-50","FREE-70"];
+  if(validCoupons.includes(coupon)){
+    //change basket value
+    document.querySelector('.orderTotal').innerText='$25.50';
+  }else{
+    document.querySelector('.orderTotal').innerText='$50.00';
+  }
+
+}
+</script>
+
+
+</body>
+</html>
